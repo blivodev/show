@@ -1,0 +1,7 @@
+item,notes,price,qty
+Widget [blue],"Says ""hello"", loudly",9.99,3
+Gadget,,24.50,
+Café crème,naïve prices ✓,3.2,12
+Short row,only two
+Long row,too,many,fields,here,extra
+[red]Not markup[/],tests escaping,1,1

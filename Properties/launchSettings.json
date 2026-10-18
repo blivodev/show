@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "show": {
+      "commandName": "Project",
+      "commandLineArgs": "ip",
+      "workingDirectory": "D:\\TechProjects\\show\\show\\bin\\Debug\\net10.0",
+      "sqlDebugging": true
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}

@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?><!-- sample --><library name="Main"><book id="1" lang="en"><title>Dune &amp; Co</title><price currency="USD">9.99</price></book><book id="2"><title>Emma</title><tags><tag>classic</tag><tag/></tags></book></library>

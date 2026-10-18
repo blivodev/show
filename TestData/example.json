@@ -1,0 +1,1 @@
+{"name":"show","version":"0.0.1","tags":["cli","tool"],"author":{"name":"Brian","active":true,"score":9.75,"notes":null},"items":[{"id":1,"label":"café <b>","price":12.5},{"id":2,"label":"two","price":1e3}],"big":12345678901234567890}
