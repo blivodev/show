@@ -1,0 +1,69 @@
+name: release
+
+# Builds the single file binaries and puts them on a release.
+# Runs when a tag like v0.0.2 is pushed, or by hand from the Actions tab for a tag that already exists.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "existing tag to build and release, e.g. v0.0.1"
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || gitea.ref }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build
+        run: |
+          set -e
+          mkdir -p dist
+          for rid in win-x64 linux-x64 osx-arm64 osx-x64; do
+            dotnet publish -c Release -r $rid --self-contained \
+              -p:PublishSingleFile=true \
+              -p:IncludeNativeLibrariesForSelfExtract=true \
+              -p:EnableCompressionInSingleFile=true \
+              -p:DebugType=none \
+              -o out/$rid
+          done
+
+          # unix builds go in a tar.gz so they keep the executable bit
+          cp out/win-x64/show.exe dist/show-win-x64.exe
+          for rid in linux-x64 osx-arm64 osx-x64; do
+            chmod 755 out/$rid/show
+            tar -C out/$rid -czf dist/show-$rid.tar.gz show
+          done
+          ls -l dist
+
+      - name: Create the release and upload the files
+        env:
+          # RELEASE_TOKEN is optional, add it as a repo secret if the built in token isn't allowed to make releases
+          TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag || gitea.ref_name }}
+          API: ${{ gitea.server_url }}/api/v1/repos/${{ gitea.repository }}
+        run: |
+          set -e
+
+          # reuse the release if it is already there, otherwise make it
+          code=$(curl -s -o release.json -w "%{http_code}" -H "Authorization: token $TOKEN" "$API/releases/tags/$TAG")
+          if [ "$code" != "200" ]; then
+            curl -sf -X POST -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
+              -d "{\"tag_name\": \"$TAG\", \"name\": \"show ${TAG#v}\", \"body\": \"Single files, no .NET install needed. Windows: show-win-x64.exe. Linux: show-linux-x64.tar.gz. macOS: show-osx-arm64.tar.gz (Apple silicon) or show-osx-x64.tar.gz (Intel).\"}" \
+              "$API/releases" -o release.json
+          fi
+          id=$(jq -r .id release.json)
+
+          for file in dist/*; do
+            echo "uploading $file"
+            curl -sf -X POST -H "Authorization: token $TOKEN" -F "attachment=@$file" "$API/releases/$id/assets?name=$(basename $file)" > /dev/null
+          done
